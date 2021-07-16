@@ -1,8 +1,8 @@
 ## FinAPI - Financeira
 
 ### Requisitos - Deve ser possível:
-- [] Criar uma conta
-- [] Buscar o extrato bancário do cliente
+- [x] Criar uma conta
+- [x] Buscar o extrato bancário do cliente
 - [] Realizar um depósito
 - [] Realizar um saque
 - [] Buscar o extrato por data
@@ -11,7 +11,7 @@
 - [] Deletar uma conta
 
 ### Regras de negócio - Não deve ser possível:
-- [] Cadastrar uma conta com CPF já existente
+- [x] Cadastrar uma conta com CPF já existente
 - [] Fazer depósito em uma conta não existente
 - [] Buscar extrato em uma conta não existente
 - [] Fazer saque em uma conta não existente
