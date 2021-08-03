@@ -1,4 +1,4 @@
-const { response } = require('express')
+const { response, request } = require('express')
 const express = require('express')
 const { v4: uuid } = require('uuid') //v4 - gera o uuid com numeros random
 
@@ -8,6 +8,24 @@ app.use(express.json()) //pra conseguir receber json
 
 //dados em memoria. toda vida que o nodemon recarrega, ele zera
 const customers = []
+
+//middleware
+
+//next define se o middleware prossegue com a operação ou se ele para por aí
+function verifyIfAccountExistsCPF(req, res, next){
+  const { cpf } = req.headers
+
+  const customer = customers.find(customer => customer.cpf === cpf)
+
+  if(!customer){
+    return res.status(400).json({ error: "Customer not found" })
+  }
+
+  //fazendo assim, todas as rotas que se utilizarem do middleware têm acesso ao customer
+  request.customer = customer
+
+  return next() 
+}
 
 /**
  * cpf: string
@@ -35,16 +53,12 @@ app.post('/account', (req, res) => {
   })
   return res.status(201).send()
 })
+
+//app.use(verifyIfAccountExistsCPF) - todas as rotas se utilizam do middleware
+
 // :var - route params
-app.get('/statement', (req, res) => {
-  const { cpf } = req.headers
-
-  const customer = customers.find(customer => customer.cpf === cpf)
-
-  if(!customer){
-    return res.status(400).json({ error: "Customer not found" })
-  }
-
+app.get('/statement', verifyIfAccountExistsCPF, (req, res) => {
+  const { customer } = request
   return res.json(customer.statement)
 })
 
