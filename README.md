@@ -3,7 +3,7 @@
 ### Requisitos - Deve ser possível:
 - [x] Criar uma conta
 - [x] Buscar o extrato bancário do cliente
-- [] Realizar um depósito
+- [x] Realizar um depósito
 - [] Realizar um saque
 - [] Buscar o extrato por data
 - [] Atualizar dados na conta do cliente

@@ -62,4 +62,23 @@ app.get('/statement', verifyIfAccountExistsCPF, (req, res) => {
   return res.json(customer.statement)
 })
 
+app.post('/deposit', verifyIfAccountExistsCPF, (req, res) => {
+  const { description, amount } = req.body
+
+  //passando as informações pra dentro do statement do user
+  const { customer } = req
+
+  const statementOperation = {
+    description,
+    amount,
+    created_at: new Date(),
+    type: 'credit'
+  }
+
+  // como se está trabalhando com dados em memória, ele ja vai pegar a posição do customer e inserir o statement corretamente
+  customer.statement.push(statementOperation)
+
+  return res.status(201).send()
+})
+
 app.listen(3000)
