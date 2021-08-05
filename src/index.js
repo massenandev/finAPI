@@ -1,4 +1,4 @@
-const { response, request } = require('express')
+const { response, request, json } = require('express')
 const express = require('express')
 const { v4: uuid } = require('uuid') //v4 - gera o uuid com numeros random
 
@@ -12,13 +12,13 @@ const customers = []
 //middleware
 
 //next define se o middleware prossegue com a operação ou se ele para por aí
-function verifyIfAccountExistsCPF(req, res, next){
-  const { cpf } = req.headers
+function verifyIfAccountExistsCPF(request, response, next){
+  const { cpf } = request.headers
 
   const customer = customers.find(customer => customer.cpf === cpf)
 
   if(!customer){
-    return res.status(400).json({ error: "Customer not found" })
+    return response.status(400).json({ error: "Customer not found" })
   }
 
   //fazendo assim, todas as rotas que se utilizarem do middleware têm acesso ao customer
@@ -27,21 +27,39 @@ function verifyIfAccountExistsCPF(req, res, next){
   return next() 
 }
 
+function getBalance(statement){
+  //reduce pega as infos de determinado valor que passa pra ela e ela  transforma as infos e valores em um valor somente
+  //Fazer o calculo do que entrou menos o que saiu
+  //acc é acumulador e o operation é o obj que se quer iterar
+  //o acc armazena o valor que quer adicionar ou retirar de dentro do obj
+  const balance = statement.reduce((acc, operation) => {
+    //temos somente duas operações: debito (-) ou credito(-)
+    if(operation.type == 'credit'){
+      return acc + operation.amount
+    } else {
+      return acc - operation.amount
+    }
+    //iniciando o valor em 0
+  }, 0)
+
+  return balance
+}
+
 /**
  * cpf: string
  * name: string
  * id: uuid - gerado na aplicação
  * statement (extrato/lançamentos da conta): array - embora seja algo da conta, não necessariamente vai receber nas infos da conta esse statement
  */
-app.post('/account', (req, res) => {
+app.post('/account', (request, response) => {
   // inserção de dados - tipo de parametro a receber é o request body
-  const { cpf, name } = req.body
+  const { cpf, name } = request.body
   //some retorna verdadeiro ou falso e dentro dele vai o que se quer verificar
   // === pra verificar os valores e o tipo
   const customerAlreadyExists = customers.some((customer) => customer.cpf === cpf)
 
   if(customerAlreadyExists){
-    return res.status(400).json({ error: "Customer already exists "})
+    return response.status(400).json({ error: "Customer already exists "})
   }
 
   //aplicação sem banco de dados. Criar um array pra salvar os clientes
@@ -51,22 +69,23 @@ app.post('/account', (req, res) => {
     id: uuid(),
     statement: []
   })
-  return res.status(201).send()
+  return response.status(201).send()
 })
 
 //app.use(verifyIfAccountExistsCPF) - todas as rotas se utilizam do middleware
 
 // :var - route params
-app.get('/statement', verifyIfAccountExistsCPF, (req, res) => {
+// statement geral
+app.get('/statement', verifyIfAccountExistsCPF, (request, response) => {
   const { customer } = request
-  return res.json(customer.statement)
+  return response.json(customer.statement)
 })
 
-app.post('/deposit', verifyIfAccountExistsCPF, (req, res) => {
-  const { description, amount } = req.body
+app.post('/deposit', verifyIfAccountExistsCPF, (request, response) => {
+  const { description, amount } = request.body
 
   //passando as informações pra dentro do statement do user
-  const { customer } = req
+  const { customer } = request
 
   const statementOperation = {
     description,
@@ -78,7 +97,44 @@ app.post('/deposit', verifyIfAccountExistsCPF, (req, res) => {
   // como se está trabalhando com dados em memória, ele ja vai pegar a posição do customer e inserir o statement corretamente
   customer.statement.push(statementOperation)
 
-  return res.status(201).send()
+  return response.status(201).send()
+})
+
+app.post('/withdraw', verifyIfAccountExistsCPF, (request, response) => {
+  const { amount } = request.body
+  //pra pegar as infos de quanto ele tem em conta
+  const { customer } = request
+
+  //ver o balanço da conta
+  const balance = getBalance(customer.statement)
+
+  if(balance < amount){
+    return response.status(400).json({ error: 'Insufficient funds' })
+  }
+
+  const statementOperation = {
+    amount,
+    created_at: new Date(),
+    type: 'debit'
+  }
+
+  customer.statement.push(statementOperation)
+
+  return response.status(201).send()
+})
+
+//statement a partir de uma certa data
+app.get('/statement/date', verifyIfAccountExistsCPF, (request, response) => {
+  const { customer } = request
+  const { date } = request.query
+
+  //pra conseguir fazer a busca pelo dia independente da hora em que fez a transação
+  const dateFormat = new Date(date + " 00:00")
+
+  // filtro pra retornar somente o extrato do dia 
+  const statement = customer.statement.filter((statement) => statement.created_at.toDateString() === new Date(dateFormat).toDateString())
+
+  return response.json(statement)
 })
 
 app.listen(3000)
