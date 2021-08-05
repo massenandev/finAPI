@@ -137,4 +137,29 @@ app.get('/statement/date', verifyIfAccountExistsCPF, (request, response) => {
   return response.json(statement)
 })
 
+app.put('/account', verifyIfAccountExistsCPF, (request, response) => {
+  const { name } = request.body
+  const { customer } = request
+
+  customer.name = name
+
+  return response.status(201).send()
+})
+
+app.get('/account', verifyIfAccountExistsCPF, (request, response) => {
+  const { customer } = request
+
+  return response.json(customer)
+})
+
+app.delete('/account', verifyIfAccountExistsCPF, (request, response) => {
+  const { customer } = request
+  //splice remove - ela espera um array. o primeiro param é onde inicia o splice, que é no próprio customer, que é o obj que se quer excluir
+  // o segundo parametro é até onde ele espera que seja feita a remoção
+  //como so quero que seja removido uma posição a partir do customer, passa o valor de 1 porque ele vai remover exatamente esse customer
+  customers.splice(customer, 1)
+
+  return response.status(200).json(customers)
+})
+
 app.listen(3000)
