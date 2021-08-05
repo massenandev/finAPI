@@ -9,6 +9,7 @@
 - [x] Atualizar dados na conta do cliente
 - [x] Obter dados da conta do cliente
 - [x] Deletar uma conta
+- [x] Retornar o saldo 
 
 ### Regras de negócio - Não deve ser possível:
 - [x] Cadastrar uma conta com CPF já existente
